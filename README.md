@@ -1,4 +1,4 @@
-# ��️ E-Voting System
+# 🗳️ E-Voting System
 
 <div align="center">
 
@@ -9,7 +9,7 @@
 
 **A secure, modern web-based electronic voting system with email OTP verification**
 
-[Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Usage](#-usage) • [API](#-api-documentation) • [Contributing](#-contributing)
+[Features](#-features) • [Architecture](#-architecture) • [Installation](#-installation) • [Usage](#-usage) • [API](#-api-documentation) • [Security](#-security)
 
 </div>
 
@@ -18,18 +18,17 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [System Architecture](#-system-architecture)
+- [User Flows](#-user-flows)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
-- [Screenshots](#-screenshots)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
 - [Usage](#-usage)
 - [API Documentation](#-api-documentation)
-- [Architecture](#-architecture)
 - [Security](#-security)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
-- [License](#-license)
 
 ## 🌟 Overview
 
@@ -43,42 +42,196 @@ The E-Voting System is a comprehensive, secure electronic voting platform design
 - 📊 **Real-time Results**: Live voting statistics and result display
 - 🛡️ **Secure Voting**: One-vote-per-user enforcement and encrypted data
 - 📱 **Mobile Responsive**: Works seamlessly on all devices
+- 👥 **Multi-role System**: Separate flows for voters, admins, and super admins
+
+## 🏗️ System Architecture
+
+### High-Level Architecture
+
+```
+┌─────────────────┐    HTTP/REST API    ┌─────────────────┐
+│   React Frontend │ ◄─────────────────► │  Express Backend │
+│   (Port 5173)    │                     │   (Port 5000)    │
+└────────┬─────────┘                     └────────┬─────────┘
+         │                                        │
+         │                                        ├─────────► MongoDB
+         │                                        │           (Database)
+         │                                        │
+         │                                        └─────────► Nodemailer
+         │                                                  (Email Service)
+         │
+         └─────────────────────────────────────────────────► localStorage
+                                                           (Client Storage)
+```
+
+### Database Schema
+
+#### User Model
+```javascript
+{
+  name: String (required),
+  rollNumber: String (required),
+  email: String (required, unique, @nmamit.in domain),
+  password: String (hashed with bcrypt),
+  isVerified: Boolean (default: false),
+  isAdmin: Boolean (default: false),
+  hasVoted: Boolean (default: false),
+  otp: String (temporary),
+  otpExpires: Date (temporary)
+}
+```
+
+#### Candidate Model
+```javascript
+{
+  name: String (required),
+  photo: String (required, URL),
+  party: String (required),
+  description: String (required),
+  votes: Number (default: 0)
+}
+```
+
+#### Election Model
+```javascript
+{
+  title: String (required),
+  description: String (required),
+  startDate: Date (required),
+  endDate: Date (required),
+  status: String (enum: ['upcoming', 'active', 'completed', 'cancelled']),
+  isActive: Boolean (default: false),
+  candidates: [ObjectId] (ref: 'Candidate'),
+  totalVotes: Number (default: 0),
+  createdBy: ObjectId (ref: 'User'),
+  settings: {
+    allowMultipleVotes: Boolean,
+    requireVerification: Boolean,
+    showResultsBeforeEnd: Boolean,
+    maxCandidates: Number
+  }
+}
+```
+
+## 🔄 User Flows
+
+### 1. Voter Registration & Voting Flow
+
+```mermaid
+graph TD
+    A[Landing Page] --> B[Register]
+    B --> C[Email Validation @nmamit.in]
+    C --> D[Account Created]
+    D --> E[Login]
+    E --> F[OTP Sent to Email]
+    F --> G[Enter OTP]
+    G --> H{OTP Valid?}
+    H -->|Yes| I[JWT Token Issued]
+    H -->|No| F
+    I --> J[Voting Dashboard]
+    J --> K[Select Candidate]
+    K --> L[Confirm Vote]
+    L --> M{Vote Cast?}
+    M -->|Yes| N[Vote Recorded]
+    M -->|No| O[Already Voted Error]
+    N --> P[Results Page]
+```
+
+### 2. Admin Management Flow
+
+```mermaid
+graph TD
+    A[Super Admin Setup] --> B[Create First Admin]
+    B --> C[Admin Login]
+    C --> D[Admin Dashboard]
+    D --> E[Manage Candidates]
+    D --> F[View Statistics]
+    D --> G[Monitor Elections]
+    D --> H[Security Dashboard]
+    E --> I[Add/Edit/Delete Candidates]
+    F --> J[Real-time Vote Counts]
+    G --> K[Start/Stop Elections]
+    H --> L[Audit Logs]
+```
+
+### 3. Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+    participant E as Email Service
+
+    U->>F: Enter credentials
+    F->>B: POST /auth/login
+    B->>DB: Validate user
+    DB-->>B: User found
+    B->>DB: Generate & store OTP
+    B->>E: Send OTP email
+    E-->>B: Email sent
+    B-->>F: OTP sent response
+    F-->>U: Check email for OTP
+    
+    U->>F: Enter OTP
+    F->>B: POST /auth/verify-otp
+    B->>DB: Validate OTP
+    DB-->>B: OTP valid
+    B->>B: Generate JWT token
+    B-->>F: Token + user data
+    F->>F: Store token in localStorage
+    F-->>U: Redirect to dashboard
+```
 
 ## ✨ Features
 
-### Authentication & Security
-- ✅ User registration with college email validation
-- ✅ Email-based OTP verification (6-digit code)
-- ✅ JWT token-based session management
-- ✅ Password hashing with bcrypt
-- ✅ Protected routes and middleware
-- ✅ CORS protection
+### 🔐 Authentication & Security
+- ✅ **Email Domain Validation**: Only @nmamit.in emails allowed
+- ✅ **OTP Verification**: 6-digit code sent via email (5-minute expiry)
+- ✅ **JWT Token Management**: Secure session handling
+- ✅ **Password Hashing**: Bcrypt with salt rounds
+- ✅ **Protected Routes**: Role-based access control
+- ✅ **CORS Protection**: Configured allowed origins
+- ✅ **Rate Limiting**: Prevents brute force attacks
 
-### Voting System
-- ✅ Candidate management and display
-- ✅ Secure vote casting with confirmation
-- ✅ One-vote-per-user enforcement
-- ✅ Real-time vote counting
-- ✅ Anonymous voting
+### 🗳️ Voting System
+- ✅ **Candidate Management**: Add, edit, delete candidates
+- ✅ **Secure Vote Casting**: One-vote-per-user enforcement
+- ✅ **Real-time Vote Counting**: Live statistics
+- ✅ **Anonymous Voting**: No vote-to-user mapping
+- ✅ **Vote Confirmation**: Double confirmation before casting
+- ✅ **Election Management**: Start/stop elections
 
-### User Experience
-- ✅ Beautiful, modern interface
-- ✅ Smooth animations and transitions
-- ✅ Toast notifications for all actions
-- ✅ Loading states and error handling
-- ✅ Responsive design (mobile, tablet, desktop)
-- ✅ Intuitive navigation
+### 👥 User Management
+- ✅ **Multi-role System**: Voters, Admins, Super Admins
+- ✅ **User Registration**: College email validation
+- ✅ **Profile Management**: Update user information
+- ✅ **Admin Creation**: Secure admin user setup
+- ✅ **User Statistics**: Registration and voting analytics
 
-### Admin Features
-- ✅ View voting statistics
-- ✅ Real-time result monitoring
-- ✅ Candidate management
+### 📊 Admin Features
+- ✅ **Dashboard Analytics**: Real-time statistics
+- ✅ **Candidate Management**: Full CRUD operations
+- ✅ **Election Control**: Start/stop voting periods
+- ✅ **Security Monitoring**: Audit logs and security dashboard
+- ✅ **User Management**: View and manage users
+- ✅ **Result Management**: Export and analyze results
+
+### 🎨 User Experience
+- ✅ **Modern UI/UX**: Beautiful, responsive design
+- ✅ **Smooth Animations**: Fade-in, slide, and hover effects
+- ✅ **Toast Notifications**: Real-time feedback
+- ✅ **Loading States**: Visual feedback for async operations
+- ✅ **Error Handling**: Comprehensive error management
+- ✅ **Mobile Responsive**: Works on all devices
+- ✅ **Accessibility**: High contrast, keyboard navigation
 
 ## 💻 Tech Stack
 
 ### Frontend
 | Technology | Version | Purpose |
-|------------|---------|---------|
+|-----------|---------|---------|
 | React | 19.1.1 | UI Framework |
 | Vite | 7.1.14 | Build Tool |
 | React Router | 7.9.4 | Routing |
@@ -88,7 +241,7 @@ The E-Voting System is a comprehensive, secure electronic voting platform design
 
 ### Backend
 | Technology | Version | Purpose |
-|------------|---------|---------|
+|-----------|---------|---------|
 | Node.js | ≥14.0.0 | Runtime |
 | Express | 5.1.0 | Web Framework |
 | MongoDB | Latest | Database |
@@ -96,16 +249,7 @@ The E-Voting System is a comprehensive, secure electronic voting platform design
 | JWT | 9.0.2 | Authentication |
 | Nodemailer | 7.0.10 | Email Service |
 | Bcrypt | 3.0.2 | Password Hashing |
-
-## 📸 Screenshots
-
-> **Note**: Add your screenshots here
-
-- Landing Page
-- Login/Registration Forms
-- OTP Verification
-- Voting Dashboard
-- Results Page
+| Express-validator | Latest | Input Validation |
 
 ## 🚀 Installation
 
@@ -190,11 +334,6 @@ npm run dev
 ```
 Frontend will run on http://localhost:5173
 
-### Verification
-
-- **Backend Health Check**: Visit http://localhost:5000/api/health
-- **Frontend**: Visit http://localhost:5173
-
 ### Step 6: Create First Admin User
 
 1. **Visit the Super Admin Setup Page**: Go to http://localhost:5173/setup
@@ -205,7 +344,7 @@ Frontend will run on http://localhost:5173
    - Password: A strong password
    - Secret Key: `admin123456` (default from .env)
 3. **Click "Create Super Admin"**
-4. **Login** with your admin credentials at http://localhost:5173/login
+4. **Login** with your admin credentials at http://localhost:5173/admin-login
 
 ## ⚙️ Configuration
 
@@ -233,20 +372,27 @@ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/e-voting
 
 ## 📖 Usage
 
-### For Administrators
-
-1. **Register/Login**: Create an account with your @nmamit.in email
-2. **Verify Email**: Enter the OTP sent to your email
-3. **Access Dashboard**: View voting dashboard
-4. **Monitor Results**: Check real-time voting statistics
-
 ### For Voters
 
-1. **Register**: Create an account with your college email and USN
+1. **Register**: Create an account with your college email (@nmamit.in) and roll number
 2. **Login**: Use your credentials to login
-3. **Verify OTP**: Enter the 6-digit code from your email
+3. **Verify OTP**: Enter the 6-digit code from your email (expires in 5 minutes)
 4. **Cast Vote**: Select your preferred candidate and confirm
 5. **View Results**: Check the live voting results
+
+### For Administrators
+
+1. **Admin Login**: Use admin credentials at `/admin-login`
+2. **Dashboard**: View real-time voting statistics and manage elections
+3. **Candidate Management**: Add, edit, or remove candidates
+4. **Election Control**: Start or stop voting periods
+5. **Security Monitoring**: Monitor system security and audit logs
+
+### For Super Administrators
+
+1. **Initial Setup**: Create the first admin user at `/setup`
+2. **Admin Management**: Create additional admin users
+3. **System Configuration**: Configure election settings and security parameters
 
 ## 📡 API Documentation
 
@@ -292,7 +438,14 @@ Content-Type: application/json
 }
 
 Response: {
-  "token": "eyJhbGc..."
+  "token": "eyJhbGc...",
+  "user": {
+    "id": "user_id",
+    "name": "John Doe",
+    "email": "john@nmamit.in",
+    "isAdmin": false,
+    "hasVoted": false
+  }
 }
 ```
 
@@ -317,80 +470,46 @@ Content-Type: application/json
 
 ### Admin Endpoints
 
-#### Get Statistics
+#### Get Dashboard Statistics
 ```http
-GET /admin/stats
+GET /admin/dashboard
 Authorization: Bearer <admin_token>
 ```
 
-## 🏗️ Architecture
-
-```
-┌─────────────────┐
-│   React Frontend │
-│   (Port 5173)    │
-└────────┬─────────┘
-         │ HTTP/REST
-         │
-┌────────▼─────────┐
-│  Express Backend │
-│   (Port 5000)    │
-└────────┬─────────┘
-         │
-         ├─────────► MongoDB
-         │           (Database)
-         │
-         └─────────► Nodemailer
-                     (Email Service)
+#### Get All Users
+```http
+GET /admin/users
+Authorization: Bearer <admin_token>
 ```
 
-### Project Structure
+#### Create Candidate
+```http
+POST /admin/candidates
+Authorization: Bearer <admin_token>
+Content-Type: application/json
 
+{
+  "name": "Candidate Name",
+  "party": "Party Name",
+  "description": "Candidate description",
+  "photo": "https://example.com/photo.jpg"
+}
 ```
-E-Voting/
-├── e-voting-backend/
-│   ├── config/
-│   │   ├── database.js      # MongoDB connection
-│   │   └── email.js         # Email configuration
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── candidateController.js
-│   │   └── adminController.js
-│   ├── middleware/
-│   │   ├── auth.js          # JWT verification
-│   │   └── admin.js         # Admin verification
-│   ├── models/
-│   │   ├── User.js
-│   │   └── Candidate.js
-│   ├── routes/
-│   │   ├── auth.js
-│   │   ├── candidates.js
-│   │   └── admin.js
-│   ├── .env                 # Environment variables
-│   ├── package.json
-│   └── server.js            # Entry point
-│
-└── e-voting-frontend/
-    ├── public/
-    ├── src/
-    │   ├── components/
-    │   │   ├── Navbar.jsx
-    │   │   └── ProtectedRoute.jsx
-    │   ├── pages/
-    │   │   ├── LandingPage.jsx
-    │   │   ├── RegisterPage.jsx
-    │   │   ├── LoginPage.jsx
-    │   │   ├── OtpVerificationPage.jsx
-    │   │   ├── VotingDashboard.jsx
-    │   │   └── ResultPage.jsx
-    │   ├── services/
-    │   │   └── api.jsx       # API service
-    │   ├── utils/
-    │   │   └── auth.jsx      # Auth utilities
-    │   ├── App.jsx
-    │   └── main.jsx
-    ├── package.json
-    └── vite.config.js
+
+### Super Admin Endpoints
+
+#### Create Super Admin
+```http
+POST /super-admin/create
+Content-Type: application/json
+
+{
+  "name": "Admin Name",
+  "rollNumber": "1NM20XX001",
+  "email": "admin@nmamit.in",
+  "password": "securepassword",
+  "secretKey": "admin123456"
+}
 ```
 
 ## 🔒 Security
@@ -404,15 +523,21 @@ E-Voting/
 - ✅ **One-Vote Enforcement**: Database-level vote tracking
 - ✅ **Input Validation**: Express-validator for data validation
 - ✅ **Error Handling**: Comprehensive error management
+- ✅ **Rate Limiting**: Prevents brute force attacks
+- ✅ **Email Domain Validation**: Restricted to @nmamit.in
+- ✅ **Admin Role Verification**: Double-check admin status
+- ✅ **Secure Headers**: Security middleware implementation
 
-### Best Practices
+### Security Best Practices
 
 - Never commit `.env` files
-- Use strong JWT secrets
+- Use strong JWT secrets (minimum 32 characters)
 - Regularly update dependencies
 - Enable HTTPS in production
 - Implement rate limiting
 - Use environment variables for sensitive data
+- Regular security audits
+- Monitor failed login attempts
 
 ## 🐛 Troubleshooting
 
@@ -476,6 +601,7 @@ Contributions are welcome! Please follow these steps:
 - Use meaningful commit messages
 - Add comments for complex logic
 - Maintain consistent formatting
+- Write tests for new features
 
 ## 📝 License
 
@@ -483,7 +609,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Authors
 
-- **Your Name** - *Initial work* - [NITHINKR06](https://github.com/NITHINKR06)
+- **NITHINKR06** - *Initial work* - [GitHub](https://github.com/NITHINKR06)
 
 ## 🙏 Acknowledgments
 
