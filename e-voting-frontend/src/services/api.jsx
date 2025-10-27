@@ -31,4 +31,39 @@ api.interceptors.response.use(
   }
 );
 
+// Comment API functions
+export const commentAPI = {
+  // Get all comments for an election
+  getComments: (electionId, candidateId = null) => {
+    const params = { electionId };
+    if (candidateId) params.candidateId = candidateId;
+    return api.get('/comments', { params });
+  },
+
+  // Create a new comment
+  createComment: (commentData) => {
+    return api.post('/comments', commentData);
+  },
+
+  // Update a comment
+  updateComment: (commentId, content) => {
+    return api.put(`/comments/${commentId}`, { content });
+  },
+
+  // Delete a comment
+  deleteComment: (commentId) => {
+    return api.delete(`/comments/${commentId}`);
+  },
+
+  // Like/Unlike a comment
+  toggleLike: (commentId) => {
+    return api.post(`/comments/${commentId}/like`);
+  },
+
+  // Get replies for a comment
+  getReplies: (commentId) => {
+    return api.get(`/comments/${commentId}/replies`);
+  }
+};
+
 export default api;

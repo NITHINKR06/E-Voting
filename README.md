@@ -146,6 +146,7 @@ MONGO_URI=mongodb://localhost:27017/e-voting
 JWT_SECRET=your_super_secret_jwt_key_here_change_this
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_email_app_password
+SUPER_ADMIN_SECRET=admin123456
 ```
 
 ### Step 3: Frontend Setup
@@ -193,6 +194,18 @@ Frontend will run on http://localhost:5173
 
 - **Backend Health Check**: Visit http://localhost:5000/api/health
 - **Frontend**: Visit http://localhost:5173
+
+### Step 6: Create First Admin User
+
+1. **Visit the Super Admin Setup Page**: Go to http://localhost:5173/setup
+2. **Fill in the form** with your admin details:
+   - Name: Your full name
+   - Roll Number: Your roll number
+   - Email: Your @nmamit.in email
+   - Password: A strong password
+   - Secret Key: `admin123456` (default from .env)
+3. **Click "Create Super Admin"**
+4. **Login** with your admin credentials at http://localhost:5173/login
 
 ## ⚙️ Configuration
 

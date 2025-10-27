@@ -47,6 +47,8 @@ const OtpVerificationPage = () => {
     try {
       const res = await api.post('/auth/verify-otp', { email, otp });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('isAdmin', res.data.user.isAdmin);
       localStorage.removeItem('loginEmail');
       toast.success('OTP verified! Redirecting to dashboard...');
       navigate('/dashboard');

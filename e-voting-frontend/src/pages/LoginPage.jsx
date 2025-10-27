@@ -22,7 +22,12 @@ const LoginPage = () => {
       toast.success('OTP sent to your email! Please check and verify.');
       navigate('/otp-verification');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      // Handle rate limiting specifically
+      if (error.response?.status === 429) {
+        toast.error('Too many login attempts. Please wait 15 minutes before trying again.');
+      } else {
+        toast.error(error.response?.data?.message || 'Login failed');
+      }
     } finally {
       setLoading(false); // Stop loading animation
     }

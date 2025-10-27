@@ -1,6 +1,6 @@
 // src/components/Navbar.jsx
 import { Link, useNavigate } from 'react-router-dom';
-import { isAuthenticated, removeToken } from '../utils/auth';
+import { isAuthenticated, removeToken, isAdmin } from '../utils/auth';
 import { useState } from 'react';
 
 const Navbar = () => {
@@ -45,17 +45,15 @@ const Navbar = () => {
               <>
                 <NavLink to="/">Home</NavLink>
                 <NavLink to="/register">Register</NavLink>
-                <Link
-                  to="/login"
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300"
-                >
-                  Login
-                </Link>
+                <NavLink to="/login">Login</NavLink>
+                <NavLink to="/admin-login">Admin Login</NavLink>
               </>
             ) : (
               <>
                 <NavLink to="/dashboard">Dashboard</NavLink>
                 <NavLink to="/results">Results</NavLink>
+                <NavLink to="/profile">Profile</NavLink>
+                {isAdmin() && <NavLink to="/admin">Admin</NavLink>}
                 <button
                   onClick={handleLogout}
                   className="bg-red-100 text-red-600 px-6 py-2 rounded-lg font-semibold hover:bg-red-200 transition-all duration-300"
@@ -89,11 +87,14 @@ const Navbar = () => {
                 <NavLink to="/" onClick={() => setMobileMenuOpen(false)}>Home</NavLink>
                 <NavLink to="/register" onClick={() => setMobileMenuOpen(false)}>Register</NavLink>
                 <NavLink to="/login" onClick={() => setMobileMenuOpen(false)}>Login</NavLink>
+                <NavLink to="/admin-login" onClick={() => setMobileMenuOpen(false)}>Admin Login</NavLink>
               </>
             ) : (
               <>
                 <NavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)}>Dashboard</NavLink>
                 <NavLink to="/results" onClick={() => setMobileMenuOpen(false)}>Results</NavLink>
+                <NavLink to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</NavLink>
+                {isAdmin() && <NavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</NavLink>}
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200 rounded-lg font-semibold"
