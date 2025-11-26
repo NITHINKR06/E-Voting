@@ -2,11 +2,6 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)
-![React](https://img.shields.io/badge/react-19.1.1-blue.svg)
-
 **A secure, modern web-based electronic voting system with email OTP verification**
 
 [Features](#-features) • [Architecture](#-architecture) • [Installation](#-installation) • [Usage](#-usage) • [API](#-api-documentation) • [Security](#-security)
